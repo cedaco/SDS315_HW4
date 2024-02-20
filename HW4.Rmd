@@ -1,0 +1,203 @@
+---
+title: "HW4"
+author: "Cesar Dao (cad4837)"
+date: "2024-02-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+[Repository Link](https://github.com/cedaco/SDS315_HW4)
+
+```{r, include=FALSE}
+library(ggplot2)
+library(mosaic)
+library(tidyverse)
+```
+
+
+# Problem 1
+
+## Theory A
+```{r, echo=FALSE}
+
+
+gas = read.csv("gasprices.csv")
+
+
+gas_boot_comp = do(10000) * mean(Price ~ Competitors, data= mosaic::resample(gas))
+
+confint(gas_boot_comp, level = 0.95)
+
+comp_diff = do(10000)* diffmean(Price ~ Competitors, data= mosaic::resample(gas))
+
+confint(comp_diff, level = 0.95)
+ggplot(comp_diff) + geom_histogram(aes(x = diffmean), bins = 50)
+
+```
+Theory A claims that gas stations charge more if they lack direct competition in sight. Zero falls just inside of the 95% confidence interval of the mean differences of price for gas stations that do and do not have competitors 
+(-0.05514808, 0.007462544). This suggests that the relationship between Competitors and Price is not statistically significant; in plain words, at 95% confidence we can say that nearby gas station competitors do not affect gas station prices.
+
+## Theory B
+```{r, echo=FALSE}
+rich_indicator = quantile(gas$Income, 0.75)
+gas$Rich = ifelse(gas$Income > rich_indicator, "Yes", "No")
+
+gas_boot_rich = do(10000) * mean(Price ~ Rich, data= mosaic::resample(gas))
+confint(gas_boot_rich, level = 0.95)
+rich_diff = do(10000) * diffmean(Price ~ Rich, data = mosaic::resample(gas))
+
+confint(rich_diff, level = 0.95)
+ggplot(rich_diff) + geom_histogram(aes(x = diffmean))
+```
+Theory B claims that he richer the area, the higher the gas prices will be. I defined a rich area as a place that is above the third quartile for median household income; the third quartile for median house income is $70095. Zero falls outside of the 95% confidence interval of the mean differences of price for gas stations that are and are not in rich areas 
+(0.04700265, 0.1120065). This suggests that the relationship between area richness and Price is statistically significant; in plain words, at 95% confidence we can say that the richness of a specific area does affect gas station prices.
+
+## Theory C
+```{r, echo=FALSE}
+gas_boot_stop = do(10000) * mean(Price ~ Stoplight, data= mosaic::resample(gas))
+confint(gas_boot_stop, level = 0.95)
+
+stop_diff = do(10000) * diffmean(Price ~ Stoplight, data= mosaic::resample(gas))
+
+confint(stop_diff, level = 0.95)
+ggplot(stop_diff) + geom_histogram(aes(x = diffmean), bins = 50)
+```
+Theory C claims that gas stations at stoplights charge more. Zero falls well inside of the 95% confidence interval of the mean differences of prices for gas stations that are and are not at stoplights  (-0.03733222, 0.03073978). This suggests that the relationship between the gas station being at a stoplight or not and Price is not statistically significant; in plain words, at 95% confidence we can say that stoplights do not affect gas station prices.
+
+## Theory D
+```{r, echo=FALSE}
+gas_boot_high = do(10000) * mean(Price ~ Highway, data= mosaic::resample(gas))
+confint(gas_boot_high, level = 0.95)
+
+high_diff = do(10000) * diffmean(Price ~ Highway, data= mosaic::resample(gas))
+confint(high_diff, level = 0.95)
+ggplot(high_diff) + geom_histogram(aes(x = diffmean), bins = 50) 
+```
+
+Theory D claims that gas stations with direct highway access charge more. Zero falls just outside of the 95% confidence interval of the mean differences for prices of gas stations that do and do not have direct highway access 
+(0.01005664, 0.08172854). This suggests that the relationship between the gas station having direct highway or not and Price is statistically significant; in plain words, at 95% confidence we can say that direct highway access does affect gas station prices.
+ 
+## Theory E
+```{r, echo=FALSE}
+gas$Shell = ifelse(gas$Brand == "Shell", "Yes", "No")
+
+gas_boot_shell = do(10000) * mean(Price ~ Shell, data= mosaic::resample(gas))
+confint(gas_boot_shell, level = 0.95)
+shell_diff = do(10000) * diffmean(Price ~ Shell, data= mosaic::resample(gas))
+confint(shell_diff, level = 0.95)
+ggplot(shell_diff) + geom_histogram(aes(x = diffmean), bins = 50) 
+```
+
+Theory E claims that Shell charges more than all other non-Shell brands. Zero falls just inside of the 95% confidence interval of the mean differences for prices of Shell and non-Shell gas stations (-0.009417713, 0.06429484). This suggests that the relationship between the gas station being Shell or not and Price is not statistically significant; in plain words, at 95% confidence we can not say that being or not being a Shell gas station affects gas station prices.
+ 
+# Problem 2
+
+## Part A
+
+We are trying to find the average mileage of used sclass cars from 2011 with a trim of 63 AMG. I made a simulation of bootstrapped data with the do() function and ran it 10000 times. I then created a 95% confidence interval for the average mileage of 63 AMG trim cars in 2011. The lower and upper bounds hovered around 26213.58 and 31838.85 respectively (changes slightly after running each time). The estimate below tells us the average mileage was 28628.07 miles for sclass cars from 2011 with a 63 AMG trim sold on cars.com (also changes slightly after running each time).
+```{r, echo=FALSE}
+sclass = read.csv("sclass.csv")
+
+sclass_filtered_1 = sclass %>%
+  filter(year == 2011 & trim == "63 AMG")
+
+sclass_boot_2011 = do(10000) * mean(~mileage, data= mosaic::resample(sclass_filtered_1))
+
+ggplot(sclass_boot_2011) + geom_histogram(aes(x = mean))
+confint(sclass_boot_2011, level = 0.95)
+
+```
+
+
+## Part B
+
+We are trying to find out the proportion of used sclass cars from 2014 with a trim of 550 that are black. We made a new variable, isBlack, which can either be TRUE or FALSE, to determine if a specific car is black or not. I made a simulation of bootstrapped data with the do() function and ran it 10000 times. I then created a 95% confidence interval for the proportion of 550 trim cars in 2014 that were black. The lower and upper bounds hovered around 0.41 and 0.45 respectively. The estimate below tells us around 42% of sclass cars from 2014 with a 550 trim from cars.com were black (changes slightly after running each time).
+
+```{r, echo=FALSE}
+sclass_filtered_2 = sclass %>%
+  filter(year == 2014 & trim == "550") %>%
+  mutate(isBlack = ifelse(color == "Black", TRUE, FALSE))
+
+sclass_boot_2014 = do(10000) * mean(~isBlack, data= mosaic::resample(sclass_filtered_2))
+ggplot(sclass_boot_2014) + geom_histogram(aes(x = mean))
+confint(sclass_boot_2014, level = 0.95)
+
+```
+
+# Problem 3
+
+## Part A
+
+We are trying to see if viewership in specific shows results in higher Q1_Happy. We are using the shows "Living with Ed" and "My Name is Earl" to analyze this. Overall Living With Ed has a higher mean happiness score than My Name is Earl. After determining this, I ran a simulation 10000 times with the do() function for the bootstrapped differences in mean Q1_Happy between the two shows. I then made a 95% confidence interval and a graph for these differences. The lower and upper bounds of the 95% confidence interval hovered around -0.4 and 0.1 respectively. As seen below, zero is within our interval, meaning that the results are not statistically significant; we are unable to determine if the viewership between two shows affects Q1_Happy at 95% confidence.
+
+```{r, echo=FALSE}
+nbc = read.csv("nbc_pilotsurvey.csv")
+
+nbc_ed_earl = nbc %>%
+  filter(Show == "Living with Ed" | Show == "My Name is Earl")
+
+mean(Q1_Happy ~ Show, data = mosaic::resample(nbc_ed_earl))
+
+ed_earl_diff = do(10000) * diffmean(Q1_Happy ~ Show, data = mosaic::resample(nbc_ed_earl))
+confint(ed_earl_diff, level = 0.95)
+
+ggplot(ed_earl_diff) + geom_histogram(aes(x = diffmean))
+
+```
+
+## Part B
+
+We are trying to see if viewership in specific shows results in higher Q1_Annoyed. We are using the shows "The Biggest Loser" and "The Apprentice: Los Angeles" to analyze this. Overall The Apprentice: Los Angeles has a higher mean annoyance score than The Biggest Loser. After determining this, I ran a simulation 10000 times with the do() function for the bootstrapped differences in mean Q1_Annoyed between the two shows. I then made a 95% confidence interval and a graph for these differences. The lower and upper bounds of the 95% confidence interval hovered around -1.05 and -0.40 respectively. As seen below, zero is not within the bounds of our interval, meaning that the results are statistically significant; we are able to determine that the viewership between two shows affects Q1_Annoyed at 95% confidence.
+
+```{r, echo=FALSE}
+nbc_loser_la = nbc %>%
+  filter(Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+
+mean(Q1_Annoyed ~ Show, data = mosaic::resample(nbc_loser_la))
+
+loser_la_diff = do(10000) * diffmean(Q1_Annoyed ~ Show, data = mosaic::resample(nbc_ed_earl))
+confint(loser_la_diff, level = 0.95)
+
+ggplot(loser_la_diff) + geom_histogram(aes(x = diffmean))
+  
+```
+
+## Part C
+
+We are trying to find out if viewing "Dancing with the Stars" resulted in viewers being more confused than not about the show's premise. We made a new variable, isConfusing, which can either be TRUE or FALSE, to determine who found the show confusing. If a viewer's Q2_Confusing score was more than or equal to 4 then the show is determined to be confusing for the particular viewer. I made a simulation of bootstrapped data with the do() function and again ran it 10000 times. I then created a 95% confidence interval for the proportion of viewers who found the show confusing. The lower and upper bounds hovered around 0.04 and 0.11 respectively. The estimate below tells us around 8.2% of people find the show confusing (changes slightly after running each time).
+
+```{r, echo=FALSE}
+nbc_dancing = nbc %>%
+  filter(Show == "Dancing with the Stars") %>%
+  mutate(isConfused = ifelse(Q2_Confusing >= 4, TRUE, FALSE))
+
+nbc_dancing_boot = do(10000) * mean(~isConfused, data = mosaic::resample(nbc_dancing))
+confint(nbc_dancing_boot, level = 0.95)
+
+```
+
+# Problem 4
+```{r, echo=FALSE}
+ebay = read.csv("ebay.csv")
+```
+We are trying to analyze the differences in revenue ratios for designated market area's (DMA's) that were and were not treated, we want to see if the treatment provided any significance. 
+
+```{r, echo=FALSE}
+mean(rev_ratio ~ adwords_pause, data = mosaic::resample(ebay))
+diffmean(rev_ratio ~ adwords_pause, data = mosaic::resample(ebay))
+```
+I first used the mean function to determine the means of rev_ratio for the control group (0) and the treated group (1). Then I used the diffmean function to find the overall difference of these means, which tends to hover around the -0.05 range for the re-sampled samples.
+
+```{r, echo=FALSE}
+ratio_diff = do(10000) * diffmean(rev_ratio ~ adwords_pause, data = mosaic::resample(ebay))
+confint(ratio_diff, level = 0.95)
+
+ggplot(ratio_diff) + geom_histogram(aes(x = diffmean))
+```
+
+I then ran the re-ampling of the mean difference 10000 times with a do() function. After that, I created a confidence interval at 95% for the mean differences in revenue ratios. Finally, I plotted the distribution to visualize the data. The lower and upper bounds hover at around -0.09 and -0.01 respectively.
+
+The 95% confidence interval does not include zero, which means that the results are statistically significant. We can deduce that ad purchasing is related to the revenue ratio at 95% confidence. When eBay does not purchase google ads, they have less revenue overall.
